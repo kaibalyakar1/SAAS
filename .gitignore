@@ -1,0 +1,45 @@
+/*************  ✨ Windsurf Command ⭐  *************/
+# dependencies
+/node_modules
+
+# testing
+/coverage
+
+# production
+/build
+
+# dotenv
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# cache
+/.cache
+
+# logs
+/logs
+
+# user data
+/user-data
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+.vercel
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# react
+public/robots.txt
+
+# node
+node_modules/
+/*******  3bb41e8c-d316-44c3-a9d0-727a5cea36f8  *******/
