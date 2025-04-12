@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useReducer, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
 import logo from "../assets/logo.png"; // Adjust the path to your logo
@@ -9,7 +9,7 @@ const Navbar = () => {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   const aboutRef = useScroll();
-
+  const navigate = useNavigate();
   const scrollToAbout = () => {
     aboutRef.current.scrollIntoView({ behavior: "smooth" });
   };
