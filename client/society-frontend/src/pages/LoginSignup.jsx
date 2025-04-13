@@ -1,7 +1,9 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom"; // 👈 add this
 
 const LoginSignup = () => {
+  const navigate = useNavigate(); // 👈 initialize
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     phone: "",
@@ -10,8 +12,8 @@ const LoginSignup = () => {
     name: "",
     email: "",
     houseNumber: "",
-    role: "tenant", // default role as tenant
-    numberOfFloors: "1", // default to 1 floor
+    role: "tenant",
+    numberOfFloors: "1",
   });
 
   const handleInputChange = (e) => {
@@ -22,16 +24,34 @@ const LoginSignup = () => {
     e.preventDefault();
 
     if (isLogin) {
-      // Login logic
-      Swal.fire("Login Successful", "Welcome back!", "success");
+      if (!formData.phone || !formData.password) {
+        Swal.fire("Error", "Please fill in all fields!", "error");
+        return;
+      }
+
+      Swal.fire("Login Successful", "Welcome back!", "success").then(() => {
+        navigate("/dashboard/user"); // 👈 redirect after success
+      });
     } else {
-      // Signup logic
+      if (
+        !formData.phone ||
+        !formData.password ||
+        !formData.confirmPassword ||
+        !formData.name ||
+        !formData.email ||
+        !formData.houseNumber
+      ) {
+        Swal.fire("Error", "Please fill in all fields!", "error");
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         Swal.fire("Error", "Passwords do not match!", "error");
         return;
       }
 
       Swal.fire("Signup Successful", "Account created!", "success");
+      setTimeout(() => setIsLogin(true), 1000);
     }
   };
 
