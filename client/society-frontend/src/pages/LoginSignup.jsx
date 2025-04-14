@@ -29,10 +29,23 @@ const LoginSignup = () => {
         return;
       }
 
+      // 👉 Static Admin Login Check
+      if (
+        formData.phone === "7978797141" &&
+        formData.password === "NV-541234"
+      ) {
+        Swal.fire("Admin Login", "Welcome Admin!", "success").then(() => {
+          navigate("/dashboard/admin");
+        });
+        return;
+      }
+
+      // 👉 Normal User Login
       Swal.fire("Login Successful", "Welcome back!", "success").then(() => {
-        navigate("/dashboard/user"); // 👈 redirect after success
+        navigate("/dashboard/user");
       });
     } else {
+      // Signup logic
       if (
         !formData.phone ||
         !formData.password ||
