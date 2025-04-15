@@ -17,7 +17,7 @@ const Sidebar = ({ username, closeSidebar }) => {
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.clear();
-        navigate("/login");
+        navigate("/signup");
         Swal.fire("Logged out!", "You have been logged out.", "success");
       }
     });

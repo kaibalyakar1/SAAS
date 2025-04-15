@@ -49,6 +49,23 @@ const UserDashboard = () => {
   ];
 
   const [randomQuote, setRandomQuote] = useState("");
+  const [showProblemModal, setShowProblemModal] = useState(false);
+  const [problemDetails, setProblemDetails] = useState({
+    description: "",
+    image: null,
+    imagePreview: null,
+    category: "General",
+  });
+
+  const problemCategories = [
+    "General",
+    "Electrical",
+    "Plumbing",
+    "Security",
+    "Cleaning",
+    "Parking",
+    "Other",
+  ];
 
   useEffect(() => {
     setRandomQuote(quotes[Math.floor(Math.random() * quotes.length)]);
@@ -139,6 +156,43 @@ const UserDashboard = () => {
     });
   };
 
+  const handleProblemSubmit = (e) => {
+    e.preventDefault();
+
+    // Here you would typically send the data to your backend
+    // For now, we'll just show a success message
+    Swal.fire({
+      icon: "success",
+      title: "Problem Reported!",
+      text: "Your issue has been submitted successfully. We'll get back to you soon.",
+      confirmButtonColor: "#4F46E5",
+    });
+
+    // Reset form and close modal
+    setProblemDetails({
+      description: "",
+      image: null,
+      imagePreview: null,
+      category: "General",
+    });
+    setShowProblemModal(false);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProblemDetails({
+          ...problemDetails,
+          image: file,
+          imagePreview: reader.result,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const paid = paymentHistory.filter((p) => p.status === "Paid").length;
   const unpaidCount = paymentHistory.filter(
     (p) => p.status === "Unpaid"
@@ -208,7 +262,168 @@ const UserDashboard = () => {
   return (
     <>
       <div className="min-h-screen w-full bg-gray-50">
-        {/* Header */}
+        {/* Problem Report Modal */}
+        {showProblemModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-800">
+                    Report a Problem
+                  </h3>
+                  <button
+                    onClick={() => setShowProblemModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <form onSubmit={handleProblemSubmit}>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Your Details
+                    </label>
+                    <div className="bg-gray-50 p-3 rounded-md">
+                      <p className="text-sm">
+                        <span className="font-medium">Name:</span> {user.name}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">House No:</span>{" "}
+                        {user.houseNumber}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Contact:</span>{" "}
+                        {user.phone}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Issue Category
+                    </label>
+                    <select
+                      value={problemDetails.category}
+                      onChange={(e) =>
+                        setProblemDetails({
+                          ...problemDetails,
+                          category: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      required
+                    >
+                      {problemCategories.map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Describe the Problem
+                    </label>
+                    <textarea
+                      value={problemDetails.description}
+                      onChange={(e) =>
+                        setProblemDetails({
+                          ...problemDetails,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      rows="4"
+                      placeholder="Please describe the issue in detail..."
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Upload Image (Optional)
+                    </label>
+                    <div className="flex items-center justify-center w-full">
+                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        {problemDetails.imagePreview ? (
+                          <img
+                            src={problemDetails.imagePreview}
+                            alt="Preview"
+                            className="h-full w-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg
+                              className="w-8 h-8 mb-4 text-gray-500"
+                              aria-hidden="true"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 20 16"
+                            >
+                              <path
+                                stroke="currentColor"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                              />
+                            </svg>
+                            <p className="mb-2 text-sm text-gray-500">
+                              <span className="font-semibold">
+                                Click to upload
+                              </span>{" "}
+                              or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG (MAX. 5MB)
+                            </p>
+                          </div>
+                        )}
+                        <input
+                          id="dropzone-file"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowProblemModal(false)}
+                      className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Submit Problem
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="container mx-auto p-4 md:p-6">
@@ -417,7 +632,10 @@ const UserDashboard = () => {
                   View Society Calendar
                 </button>
 
-                <button className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition duration-300 shadow">
+                <button
+                  onClick={() => setShowProblemModal(true)}
+                  className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg transition duration-300 shadow"
+                >
                   <svg
                     className="h-5 w-5"
                     fill="none"
@@ -431,7 +649,7 @@ const UserDashboard = () => {
                       d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
                     />
                   </svg>
-                  Submit Complaint
+                  Report a Problem
                 </button>
               </div>
             </div>

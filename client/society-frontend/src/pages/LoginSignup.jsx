@@ -30,10 +30,7 @@ const LoginSignup = () => {
       }
 
       // 👉 Static Admin Login Check
-      if (
-        formData.phone === "7978797141" &&
-        formData.password === "NV-541234"
-      ) {
+      if (formData.phone === "7978797141" && formData.password === "NV1234") {
         Swal.fire("Admin Login", "Welcome Admin!", "success").then(() => {
           navigate("/dashboard/admin");
         });
