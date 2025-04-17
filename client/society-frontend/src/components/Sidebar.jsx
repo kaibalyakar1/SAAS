@@ -41,27 +41,6 @@ const Sidebar = ({ username, closeSidebar }) => {
         <div className="p-6 border-b border-gray-700">
           <h2 className="text-xl font-semibold">Welcome, {username}</h2>
         </div>
-
-        <ul className="mt-4 space-y-2">
-          <li
-            onClick={redirectToConstruction}
-            className="px-6 py-3 hover:bg-gray-700 cursor-pointer"
-          >
-            Raise a Problem
-          </li>
-          <li
-            onClick={redirectToConstruction}
-            className="px-6 py-3 hover:bg-gray-700 cursor-pointer"
-          >
-            Update Problem
-          </li>
-          <li
-            onClick={redirectToConstruction}
-            className="px-6 py-3 hover:bg-gray-700 cursor-pointer"
-          >
-            Settings
-          </li>
-        </ul>
       </div>
 
       <div className="p-6 border-t border-gray-700">

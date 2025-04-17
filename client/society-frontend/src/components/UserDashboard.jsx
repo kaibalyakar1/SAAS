@@ -117,40 +117,137 @@ const UserDashboard = () => {
     });
   };
 
-  const generateBill = () => {
-    const latest = paymentHistory.find((p) => p.status === "Paid");
-    if (!latest) {
+  const generateBill = (payment) => {
+    if (!payment || payment.status !== "Paid") {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "No paid bills found to generate receipt!",
+        text: "Cannot generate receipt for unpaid bills!",
       });
       return;
     }
 
+    // Create PDF document
     const doc = new jsPDF();
+
+    // Set document properties
+    doc.setProperties({
+      title: `Nayan Vihar Maintenance Bill - ${payment.month}`,
+      subject: "Maintenance Bill Receipt",
+      author: "Nayan Vihar Society",
+      creator: "Nayan Vihar Management",
+    });
+
+    // Add watermark with house number
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(230, 230, 230); // Light gray color
+    doc.setFontSize(60);
+
+    // Save the current state
+    doc.saveGraphicsState();
+
+    // Rotate and position the watermark
+    const watermarkText = `HOUSE ${user.houseNumber}`;
+    doc.translate(105, 150);
+    doc.rotate(-45);
+    doc.text(watermarkText, 0, 0, { align: "center" });
+
+    // Restore to original state
+    doc.restoreGraphicsState();
+
+    // Header section
+    doc.setFillColor(0, 51, 102);
+    doc.rect(0, 0, 210, 40, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.setTextColor(0, 0, 128);
-    doc.text("Nayan Vihar Maintenance Bill", 20, 20);
+    doc.text("NAYAN VIHAR", 105, 20, { align: "center" });
+    doc.setFontSize(16);
+    doc.text("MAINTENANCE RECEIPT", 105, 30, { align: "center" });
 
+    // Bill info section
+    doc.setDrawColor(0, 51, 102);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(15, 50, 180, 100, 3, 3);
+
+    // Bill details
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 51, 102);
     doc.setFontSize(14);
+    doc.text("RECEIPT DETAILS", 105, 60, { align: "center" });
+
+    // Separator line
+    doc.setLineWidth(0.2);
+    doc.line(30, 65, 180, 65);
+
+    // Customer details section
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
-    doc.text(`House: ${user.houseNumber}`, 20, 40);
-    doc.text(`Resident: ${user.name}`, 20, 50);
-    doc.text(`Month: ${latest.month}`, 20, 60);
-    doc.text(`Amount: ₹${latest.amount}`, 20, 70);
-    doc.text(`Paid on: ${latest.date}`, 20, 80);
+    doc.setFontSize(12);
+    doc.text("House Number:", 30, 80);
+    doc.text("Resident Name:", 30, 90);
+    doc.text("Bill Month:", 30, 100);
+    doc.text("Amount Paid:", 30, 110);
+    doc.text("Payment Date:", 30, 120);
+    doc.text("Payment Status:", 30, 130);
 
+    // Values
+    doc.setFont("helvetica", "normal");
+    doc.text(user.houseNumber, 100, 80);
+    doc.text(user.name, 100, 90);
+    doc.text(payment.month, 100, 100);
+    doc.setFont("helvetica", "bold");
+    doc.text(`₹${payment.amount}`, 100, 110);
+    doc.setFont("helvetica", "normal");
+    doc.text(payment.date, 100, 120);
+    doc.setTextColor(0, 128, 0);
+    doc.text("PAID", 100, 130);
+
+    // Footer
+    doc.setDrawColor(0, 51, 102);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(15, 160, 180, 40, 3, 3);
+
+    doc.setTextColor(0, 51, 102);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Thank you for your timely payment!", 105, 175, {
+      align: "center",
+    });
+
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      [
+        "This is an electronically generated receipt and does not require a signature.",
+        "For any queries, please contact the society office or email: nayanvihar@example.com",
+        "Office Hours: Monday to Saturday (10:00 AM - 6:00 PM)",
+      ],
+      105,
+      185,
+      { align: "center", maxWidth: 160 }
+    );
+
+    // Add receipt number and date
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
     doc.setTextColor(100, 100, 100);
-    doc.text("Thank you for your timely payment!", 20, 100);
+    const receiptNumber = `RECEIPT#: NV-${user.houseNumber}-${Date.now()
+      .toString()
+      .substring(8)}`;
+    doc.text(receiptNumber, 20, 240);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 150, 240);
 
-    doc.save("maintenance_bill.pdf");
+    // Save the PDF
+    doc.save(`maintenance_bill_${payment.month.replace(" ", "_")}.pdf`);
 
+    // Success notification
     Swal.fire({
       position: "top-end",
       icon: "success",
       title: "PDF bill generated!",
+      text: "Your receipt has been downloaded",
       showConfirmButton: false,
       timer: 1500,
     });
@@ -248,15 +345,36 @@ const UserDashboard = () => {
   };
 
   const getPaymentStatusLabel = (status) => {
-    return status === "Paid" ? (
-      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-        Paid
-      </span>
-    ) : (
-      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">
-        Unpaid
-      </span>
-    );
+    if (status === "Paid") {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+          Paid
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+          Unpaid
+        </span>
+      );
+    }
+  };
+  const handlePayNow = (payment) => {
+    // Payment gateway integration would go here
+    Swal.fire({
+      title: "Process Payment",
+      text: `You're about to pay ₹${payment.amount} for ${payment.month}`,
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Proceed to Payment",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Simulate payment processing here
+        // In a real application, you would redirect to a payment gateway
+      }
+    });
   };
 
   return (
@@ -769,11 +887,17 @@ const UserDashboard = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {payment.status === "Unpaid" ? (
-                          <button className="text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full transition duration-300">
+                          <button
+                            className="text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full transition duration-300"
+                            onClick={() => handlePayNow(payment)}
+                          >
                             Pay Now
                           </button>
                         ) : (
-                          <button className="text-sm bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-full transition duration-300">
+                          <button
+                            className="text-sm bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-full transition duration-300"
+                            onClick={() => generateBill(payment)}
+                          >
                             View Receipt
                           </button>
                         )}
