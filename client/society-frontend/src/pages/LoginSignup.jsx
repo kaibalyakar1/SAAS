@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom"; // 👈 add this
+import axios from "axios";
 
 const LoginSignup = () => {
   const navigate = useNavigate(); // 👈 initialize
@@ -12,22 +13,23 @@ const LoginSignup = () => {
     name: "",
     email: "",
     houseNumber: "",
-    role: "tenant",
-    numberOfFloors: "1",
+    role: "TENANT",
+    numberOfFloors: "1FLOOR",
   });
 
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const baseURL = "http://localhost:3000/api/v1/auth"; // 👈 your backend URL
     if (isLogin) {
       if (!formData.phone || !formData.password) {
         Swal.fire("Error", "Please fill in all fields!", "error");
         return;
       }
+      console.log("Form Data:", formData); // 👈 log form data
 
       // 👉 Static Admin Login Check
       if (formData.phone === "7978797141" && formData.password === "NV1234") {
@@ -38,9 +40,29 @@ const LoginSignup = () => {
       }
 
       // 👉 Normal User Login
-      Swal.fire("Login Successful", "Welcome back!", "success").then(() => {
-        navigate("/dashboard/user");
-      });
+      try {
+        const res = await axios.post(`${baseURL}/login`, {
+          phoneNumber: formData.phone,
+          password: formData.password,
+        });
+
+        const { success, user, token, message } = res.data;
+        if (success) {
+          Swal.fire("Login Successful", message, "success").then(() => {
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            navigate("/dashboard/user");
+          });
+        } else {
+          Swal.fire("Login Failed", message, "error");
+        }
+      } catch (err) {
+        Swal.fire(
+          "Error",
+          err.response?.data?.message || "Server error",
+          "error"
+        );
+      }
     } else {
       // Signup logic
       if (
@@ -60,8 +82,32 @@ const LoginSignup = () => {
         return;
       }
 
-      Swal.fire("Signup Successful", "Account created!", "success");
-      setTimeout(() => setIsLogin(true), 1000);
+      try {
+        const res = await axios.post(`${baseURL}/signup`, {
+          ownerName: formData.name,
+          phoneNumber: formData.phone,
+          email: formData.email,
+          houseNumber: formData.houseNumber,
+          flatType: formData.numberOfFloors,
+          role: formData.role,
+          password: formData.password,
+        });
+        console.log("Form Data:", formData); // 👈 log form data
+
+        if (res.data.success) {
+          // 👈 Check res.data.success instead of res.success
+          Swal.fire("Signup Successful", "Account created!", "success");
+          setTimeout(() => setIsLogin(true), 1000);
+        } else {
+          Swal.fire("Error", res.data.message || "Signup failed", "error");
+        }
+      } catch (err) {
+        Swal.fire(
+          "Error",
+          err.response?.data?.message || "Server error",
+          "error"
+        );
+      }
     }
   };
 
@@ -108,8 +154,8 @@ const LoginSignup = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
                   >
-                    <option value="tenant">Tenant</option>
-                    <option value="owner">Owner</option>
+                    <option value="OWNER">Owner</option>
+                    <option value="TENANT">Tenant</option>
                   </select>
                 </div>
               </div>
@@ -121,10 +167,10 @@ const LoginSignup = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="2.5">2.5</option>
-                  <option value="3">3</option>
+                  <option value="1FLOOR">1</option>
+                  <option value="2FLOOR">2</option>
+                  <option value="2.5FLOOR">2.5</option>
+                  <option value="3FLOOR">3</option>
                 </select>
               </div>
             </>
