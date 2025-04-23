@@ -7,53 +7,19 @@ import {
   Search,
   Trash,
   Plus,
+  X as XIcon,
+  EyeIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ComplaintsComponent = () => {
-  const [complaints, setComplaints] = useState([
-    {
-      id: 1,
-      houseNo: "A-101",
-      ownerName: "Kaibalya Kar",
-      complaintDate: "2025-04-10",
-      description: "Water leakage from the ceiling",
-      proof: "leak-image.jpg",
-      status: "pending",
-    },
-    {
-      id: 2,
-      houseNo: "B-205",
-      ownerName: "Rahul Sharma",
-      complaintDate: "2025-04-08",
-      description: "Elevator not working properly",
-      proof: "elevator-video.mp4",
-      status: "ongoing",
-    },
-    {
-      id: 3,
-      houseNo: "C-302",
-      ownerName: "Priya Patel",
-      complaintDate: "2025-04-05",
-      description: "Garbage not collected regularly",
-      proof: "garbage-image.jpg",
-      status: "resolved",
-    },
-    {
-      id: 4,
-      houseNo: "D-104",
-      ownerName: "Amit Singh",
-      complaintDate: "2025-04-12",
-      description: "Noise complaint against neighbor",
-      proof: "noise-recording.mp3",
-      status: "pending",
-    },
-  ]);
-
+  const [complaints, setComplaints] = useState([]);
   const [showComplaintForm, setShowComplaintForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [newComplaint, setNewComplaint] = useState({
     houseNo: "",
@@ -61,8 +27,55 @@ const ComplaintsComponent = () => {
     complaintDate: new Date().toISOString().split("T")[0],
     description: "",
     proof: "",
-    status: "pending",
+    category: "General",
+    status: "reported",
   });
+
+  // Fetch complaints from API
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:3000/api/v1/problem/all-problems",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch complaints");
+        }
+
+        const data = await response.json();
+
+        // Transform API data to match component structure
+        const transformedData = data.map((item, index) => ({
+          id: item._id,
+          houseNo: item.user.houseNumber,
+          ownerName: item.user.ownerName,
+          phoneNumber: item.user.phoneNumber,
+          complaintDate: new Date(item.createdAt).toISOString().split("T")[0],
+          description: item.description,
+          proof: item.image,
+          category: item.category,
+          status: item.status,
+        }));
+
+        setComplaints(transformedData);
+      } catch (err) {
+        console.error("Error fetching complaints:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchComplaints();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -72,52 +85,166 @@ const ComplaintsComponent = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setComplaints((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        ...newComplaint,
-      },
-    ]);
-    setShowComplaintForm(false);
-    setNewComplaint({
-      houseNo: "",
-      ownerName: "",
-      complaintDate: new Date().toISOString().split("T")[0],
-      description: "",
-      proof: "",
-      status: "pending",
-    });
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+
+      formData.append("category", newComplaint.category);
+      formData.append("description", newComplaint.description);
+
+      if (newComplaint.proof instanceof File) {
+        formData.append("image", newComplaint.proof);
+      }
+
+      const response = await fetch(
+        "http://localhost:3000/api/v1/problem/report",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit complaint");
+      }
+
+      // Refresh complaints list
+      const refreshResponse = await fetch(
+        "http://localhost:3000/api/v1/problem/all-problems",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!refreshResponse.ok) {
+        throw new Error("Failed to refresh complaints");
+      }
+
+      const data = await refreshResponse.json();
+
+      // Transform API data
+      const transformedData = data.map((item) => ({
+        id: item._id,
+        houseNo: item.user.houseNumber,
+        ownerName: item.user.ownerName,
+        phoneNumber: item.user.phoneNumber,
+        complaintDate: new Date(item.createdAt).toISOString().split("T")[0],
+        description: item.description,
+        proof: item.image,
+        category: item.category,
+        status: item.status,
+      }));
+
+      setComplaints(transformedData);
+      setShowComplaintForm(false);
+      setNewComplaint({
+        houseNo: "",
+        ownerName: "",
+        complaintDate: new Date().toISOString().split("T")[0],
+        description: "",
+        proof: "",
+        category: "General",
+        status: "reported",
+      });
+
+      // Show success message
+      alert("Complaint submitted successfully!");
+    } catch (err) {
+      console.error("Error submitting complaint:", err);
+      alert("Failed to submit complaint: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setComplaints(
-      complaints.map((complaint) =>
-        complaint.id === id ? { ...complaint, status: newStatus } : complaint
-      )
-    );
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:3000/api/v1/problem/problem-status/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update status");
+      }
+
+      setComplaints(
+        complaints.map((complaint) =>
+          complaint.id === id ? { ...complaint, status: newStatus } : complaint
+        )
+      );
+    } catch (err) {
+      console.error("Error updating status:", err);
+      alert("Failed to update status: " + err.message);
+    }
   };
 
-  const handleDeleteComplaint = (id) => {
-    setComplaints(complaints.filter((complaint) => complaint.id !== id));
+  const handleDeleteComplaint = async (id) => {
+    if (!confirm("Are you sure you want to delete this complaint?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:3000/api/v1/problem/problem-delete/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete complaint");
+      }
+
+      setComplaints(complaints.filter((complaint) => complaint.id !== id));
+    } catch (err) {
+      console.error("Error deleting complaint:", err);
+      alert("Failed to delete complaint: " + err.message);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewComplaint((prev) => ({
+        ...prev,
+        proof: file,
+      }));
+    }
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case "pending":
+      case "reported":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
             <Clock size={12} className="mr-1" />
-            Pending
+            Reported
           </span>
         );
-      case "ongoing":
+      case "in-progress":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             <AlertTriangle size={12} className="mr-1" />
-            Ongoing
+            In Progress
           </span>
         );
       case "resolved":
@@ -139,15 +266,43 @@ const ComplaintsComponent = () => {
       (filterStatus === "all" || complaint.status === filterStatus)
   );
 
-  const pendingCount = complaints.filter(
-    (complaint) => complaint.status === "pending"
+  const reportedCount = complaints.filter(
+    (complaint) => complaint.status === "reported"
   ).length;
-  const ongoingCount = complaints.filter(
-    (complaint) => complaint.status === "ongoing"
+  const inProgressCount = complaints.filter(
+    (complaint) => complaint.status === "in-progress"
   ).length;
   const resolvedCount = complaints.filter(
     (complaint) => complaint.status === "resolved"
   ).length;
+
+  if (isLoading && complaints.length === 0) {
+    return (
+      <div className="p-4 flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p>Loading complaints...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && complaints.length === 0) {
+    return (
+      <div className="p-4">
+        <div className="bg-red-100 p-4 rounded-md text-red-800">
+          <h2 className="font-bold mb-2">Error</h2>
+          <p>{error}</p>
+          <button
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -170,10 +325,10 @@ const ComplaintsComponent = () => {
           <div className="flex justify-between">
             <div>
               <p className="text-xs md:text-sm text-gray-500">
-                Pending Complaints
+                Reported Complaints
               </p>
               <p className="text-xl md:text-2xl font-bold text-yellow-600">
-                {pendingCount}
+                {reportedCount}
               </p>
             </div>
             <div className="p-2 bg-yellow-100 rounded-full">
@@ -186,10 +341,10 @@ const ComplaintsComponent = () => {
           <div className="flex justify-between">
             <div>
               <p className="text-xs md:text-sm text-gray-500">
-                Ongoing Complaints
+                In Progress Complaints
               </p>
               <p className="text-xl md:text-2xl font-bold text-blue-600">
-                {ongoingCount}
+                {inProgressCount}
               </p>
             </div>
             <div className="p-2 bg-blue-100 rounded-full">
@@ -225,50 +380,32 @@ const ComplaintsComponent = () => {
           >
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                House Number
+                Category
               </label>
-              <input
-                type="text"
-                name="houseNo"
+              <select
+                name="category"
+                value={newComplaint.category}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
                 required
-                value={newComplaint.houseNo}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              >
+                <option value="General">General</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Security">Security</option>
+                <option value="Cleaning">Cleaning</option>
+                <option value="Maintenance">Maintenance</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Owner Name
-              </label>
-              <input
-                type="text"
-                name="ownerName"
-                required
-                value={newComplaint.ownerName}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Complaint Date
-              </label>
-              <input
-                type="date"
-                name="complaintDate"
-                value={newComplaint.complaintDate}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Proof (File)
+                Proof (Image)
               </label>
               <input
                 type="file"
                 name="proof"
-                onChange={handleInputChange}
+                accept="image/*"
+                onChange={handleFileChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -283,6 +420,7 @@ const ComplaintsComponent = () => {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Please describe your complaint in detail..."
               ></textarea>
             </div>
             <div className="md:col-span-2 flex justify-end space-x-2 mt-2">
@@ -290,14 +428,23 @@ const ComplaintsComponent = () => {
                 type="button"
                 onClick={() => setShowComplaintForm(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                disabled={isLoading}
               >
-                Submit Complaint
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Complaint"
+                )}
               </button>
             </div>
           </form>
@@ -331,24 +478,24 @@ const ComplaintsComponent = () => {
               All
             </button>
             <button
-              onClick={() => setFilterStatus("pending")}
+              onClick={() => setFilterStatus("reported")}
               className={`px-3 py-1 rounded ${
-                filterStatus === "pending"
+                filterStatus === "reported"
                   ? "bg-yellow-100 text-yellow-800"
                   : "bg-white border border-gray-300"
               }`}
             >
-              Pending
+              Reported
             </button>
             <button
-              onClick={() => setFilterStatus("ongoing")}
+              onClick={() => setFilterStatus("in-progress")}
               className={`px-3 py-1 rounded ${
-                filterStatus === "ongoing"
+                filterStatus === "in-progress"
                   ? "bg-blue-100 text-blue-800"
                   : "bg-white border border-gray-300"
               }`}
             >
-              Ongoing
+              In Progress
             </button>
             <button
               onClick={() => setFilterStatus("resolved")}
@@ -374,9 +521,9 @@ const ComplaintsComponent = () => {
                 <tr>
                   <th className="py-2 px-4 text-left">House No.</th>
                   <th className="py-2 px-4 text-left">Owner</th>
+                  <th className="py-2 px-4 text-left">Category</th>
                   <th className="py-2 px-4 text-left">Date</th>
                   <th className="py-2 px-4 text-left">Description</th>
-                  <th className="py-2 px-4 text-left">Proof</th>
                   <th className="py-2 px-4 text-left">Status</th>
                   <th className="py-2 px-4 text-left">Actions</th>
                 </tr>
@@ -386,19 +533,12 @@ const ComplaintsComponent = () => {
                   <tr key={complaint.id}>
                     <td className="py-2 px-4">{complaint.houseNo}</td>
                     <td className="py-2 px-4">{complaint.ownerName}</td>
+                    <td className="py-2 px-4">{complaint.category}</td>
                     <td className="py-2 px-4">{complaint.complaintDate}</td>
                     <td className="py-2 px-4">
                       <div className="max-w-xs truncate">
                         {complaint.description}
                       </div>
-                    </td>
-                    <td className="py-2 px-4">
-                      <a
-                        href="#"
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        View
-                      </a>
                     </td>
                     <td className="py-2 px-4">
                       {getStatusBadge(complaint.status)}
@@ -412,8 +552,8 @@ const ComplaintsComponent = () => {
                           }
                           className="text-sm border border-gray-300 rounded p-1"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="ongoing">Ongoing</option>
+                          <option value="reported">Reported</option>
+                          <option value="in-progress">In Progress</option>
                           <option value="resolved">Resolved</option>
                         </select>
                         <button
@@ -421,7 +561,7 @@ const ComplaintsComponent = () => {
                           className="p-1 text-blue-600 hover:text-blue-800"
                           title="View Details"
                         >
-                          <Edit size={16} />
+                          <EyeIcon size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteComplaint(complaint.id)}
@@ -467,6 +607,10 @@ const ComplaintsComponent = () => {
                 <p className="font-medium">{selectedComplaint.ownerName}</p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">Category</p>
+                <p className="font-medium">{selectedComplaint.category}</p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">Complaint Date</p>
                 <p className="font-medium">{selectedComplaint.complaintDate}</p>
               </div>
@@ -480,12 +624,18 @@ const ComplaintsComponent = () => {
                 <p className="text-sm text-gray-500">Description</p>
                 <p className="font-medium">{selectedComplaint.description}</p>
               </div>
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-500">Proof</p>
-                <p className="font-medium text-blue-600 hover:underline cursor-pointer">
-                  {selectedComplaint.proof}
-                </p>
-              </div>
+              {selectedComplaint.proof && (
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-500">Image</p>
+                  <div className="mt-2">
+                    <img
+                      src={selectedComplaint.proof}
+                      alt="Complaint proof"
+                      className="max-h-64 rounded-md"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <div className="border-t pt-4 flex justify-end">
               <button

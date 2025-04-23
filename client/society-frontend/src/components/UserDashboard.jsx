@@ -247,40 +247,87 @@ const UserDashboard = ({ user }) => {
     });
   };
 
-  const handleProblemSubmit = (e) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleProblemSubmit = async (e) => {
+    const token = localStorage.getItem("token");
     e.preventDefault();
 
-    // Here you would typically send the data to your backend
-    // For now, we'll just show a success message
-    Swal.fire({
-      icon: "success",
-      title: "Problem Reported!",
-      text: "Your issue has been submitted successfully. We'll get back to you soon.",
-      confirmButtonColor: "#4F46E5",
-    });
+    // Set loading state to true
+    setIsSubmitting(true);
 
-    // Reset form and close modal
-    setProblemDetails({
-      description: "",
-      image: null,
-      imagePreview: null,
-      category: "General",
-    });
-    setShowProblemModal(false);
+    const formData = new FormData();
+    formData.append("ownerName", user.ownerName);
+    formData.append("houseNumber", user.houseNumber);
+    formData.append("phoneNumber", user.phoneNumber);
+    formData.append("category", problemDetails.category);
+    formData.append("description", problemDetails.description);
+
+    if (problemDetails.image) {
+      formData.append("image", problemDetails.image);
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:3000/api/v1/problem/report",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      // Set loading state to false
+      setIsSubmitting(false);
+
+      if (response.ok) {
+        Swal.fire({
+          icon: "success",
+          title: "Problem Reported!",
+          text: "Your issue has been submitted successfully. We'll get back to you soon.",
+          confirmButtonColor: "#4F46E5",
+        });
+
+        // Reset form and close modal
+        setProblemDetails({
+          description: "",
+          image: null,
+          imagePreview: null,
+          category: "General",
+        });
+        setShowProblemModal(false);
+      } else {
+        const result = await response.json();
+        Swal.fire({
+          icon: "error",
+          title: "Submission Failed",
+          text: result.message || "An error occurred. Please try again.",
+          confirmButtonColor: "#4F46E5",
+        });
+      }
+    } catch (error) {
+      // Set loading state to false in case of error
+      setIsSubmitting(false);
+
+      Swal.fire({
+        icon: "error",
+        title: "Network Error",
+        text: "Could not connect to the server. Please try again later.",
+        confirmButtonColor: "#4F46E5",
+      });
+    }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProblemDetails({
-          ...problemDetails,
-          image: file,
-          imagePreview: reader.result,
-        });
-      };
-      reader.readAsDataURL(file);
+      setProblemDetails({
+        ...problemDetails,
+        image: file,
+        imagePreview: URL.createObjectURL(file),
+      });
     }
   };
 
@@ -527,9 +574,36 @@ const UserDashboard = ({ user }) => {
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      disabled={isSubmitting}
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center"
                     >
-                      Submit Problem
+                      {isSubmitting ? (
+                        <>
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Submitting...
+                        </>
+                      ) : (
+                        "Submit Problem"
+                      )}
                     </button>
                   </div>
                 </form>
