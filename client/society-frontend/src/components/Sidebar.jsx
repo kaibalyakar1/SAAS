@@ -2,9 +2,10 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-const Sidebar = ({ username, closeSidebar }) => {
+const Sidebar = ({ user, closeSidebar }) => {
   const navigate = useNavigate();
-
+  console.log("Sidebar user:", user); // Debugging line
+  const { ownerName } = user;
   const handleLogout = () => {
     Swal.fire({
       title: "Are you sure?",
@@ -39,7 +40,7 @@ const Sidebar = ({ username, closeSidebar }) => {
         </div>
 
         <div className="p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold">Welcome, {username}</h2>
+          <h2 className="text-xl font-semibold">Welcome, {ownerName}</h2>
         </div>
       </div>
 

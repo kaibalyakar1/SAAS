@@ -26,14 +26,8 @@ ChartJS.register(
   Legend
 );
 
-const UserDashboard = () => {
-  const [user, setUser] = useState({
-    houseNumber: "A-101",
-    name: "Kaibalya Kar",
-    email: "kaibalya@example.com",
-    phone: "+91-XXXXXXXXXX",
-  });
-
+const UserDashboard = ({ user }) => {
+  console.log("storedUser", user);
   const [paymentHistory, setPaymentHistory] = useState([
     { month: "January", amount: 500, status: "Paid", date: "2025-01-01" },
     { month: "February", amount: 500, status: "Paid", date: "2025-02-01" },
@@ -416,7 +410,8 @@ const UserDashboard = () => {
                     </label>
                     <div className="bg-gray-50 p-3 rounded-md">
                       <p className="text-sm">
-                        <span className="font-medium">Name:</span> {user.name}
+                        <span className="font-medium">Name:</span>{" "}
+                        {user.ownerName}
                       </p>
                       <p className="text-sm">
                         <span className="font-medium">House No:</span>{" "}
@@ -424,7 +419,7 @@ const UserDashboard = () => {
                       </p>
                       <p className="text-sm">
                         <span className="font-medium">Contact:</span>{" "}
-                        {user.phone}
+                        {user.phoneNumber}
                       </p>
                     </div>
                   </div>
@@ -548,7 +543,7 @@ const UserDashboard = () => {
           {/* Welcome Section */}
           <div className="mb-8 bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500 transform hover:scale-102 transition-transform duration-300">
             <h2 className="text-2xl font-bold text-gray-800">
-              Welcome, {user.name}!
+              Welcome, {user.ownerName}!
               {!unpaid && <span className="ml-2 text-green-500">✓</span>}
             </h2>
             <p className="text-gray-600 mt-2 italic">"{randomQuote}"</p>
@@ -611,7 +606,9 @@ const UserDashboard = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium text-gray-800">{user.name}</p>
+                    <p className="font-medium text-gray-800">
+                      {user.ownerName}
+                    </p>
                   </div>
                 </div>
 
@@ -679,7 +676,9 @@ const UserDashboard = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium text-gray-800">{user.phone}</p>
+                    <p className="font-medium text-gray-800">
+                      {user.phoneNumber}
+                    </p>
                   </div>
                 </div>
               </div>

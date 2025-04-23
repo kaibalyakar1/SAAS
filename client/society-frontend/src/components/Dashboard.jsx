@@ -3,7 +3,10 @@ import Sidebar from "./Sidebar";
 import UserDashboard from "./UserDashboard";
 
 const Dashboard = () => {
-  const username = localStorage.getItem("username") || "User";
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : {};
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -14,10 +17,7 @@ const Dashboard = () => {
     <div className="flex ">
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? "block" : "hidden"} md:block`}>
-        <Sidebar
-          username={username}
-          closeSidebar={() => setIsSidebarOpen(false)}
-        />
+        <Sidebar user={user} closeSidebar={() => setIsSidebarOpen(false)} />
       </div>
 
       {/* Main content */}
@@ -34,7 +34,7 @@ const Dashboard = () => {
         </div>
 
         <div className="p-6">
-          <UserDashboard />
+          <UserDashboard user={user} />
         </div>
       </div>
     </div>
