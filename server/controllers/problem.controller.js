@@ -91,3 +91,25 @@ export const deleteProblem = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const getAllProblemsByUser = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userProblems = await Problem.find({ user: userId })
+      .populate("user", "ownerName phoneNumber houseNumber")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: userProblems,
+      message: "Reported problems retrieved successfully",
+    });
+  } catch (error) {
+    console.error(`[getAllProblemsByUser] Error:`, error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while fetching problems.",
+    });
+  }
+};

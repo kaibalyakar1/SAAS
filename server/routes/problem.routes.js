@@ -3,6 +3,7 @@ import upload from "../middlewares/upload.middlewares.js";
 import {
   deleteProblem,
   getAllProblems,
+  getAllProblemsByUser,
   getProblemById,
   reportProblem,
   updateProblemStatus,
@@ -14,7 +15,7 @@ router.post("/report", protect, upload.single("image"), reportProblem);
 router.get("/all-problems", getAllProblems);
 
 router.get("/problem/:id", getProblemById);
-
+router.get("/user-problem", protect, getAllProblemsByUser);
 router.put("/problem-status/:id", upload.single("image"), updateProblemStatus);
 router.delete("/problem-delete/:id", deleteProblem);
 
