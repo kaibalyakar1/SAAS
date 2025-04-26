@@ -1,77 +1,16 @@
 import { useEffect, useState } from "react";
 
-const dummyProperties = [
-  {
-    id: 1,
-    houseNumber: "A-101",
-    ownerName: "John Smith",
-    phone: "+91-9876543210",
-    email: "john.smith@example.com",
-    flatType: "3 BHK Premium",
-    maintenance: 5500,
-    isPaid: true,
-    updatedAt: "2025-03-15T10:30:00Z",
-  },
-  {
-    id: 2,
-    houseNumber: "B-205",
-    ownerName: "Sarah Johnson",
-    phone: "+91-8765432109",
-    email: "sarah.j@example.com",
-    flatType: "2 BHK Standard",
-    maintenance: 3500,
-    isPaid: false,
-    updatedAt: "2025-04-01T14:15:00Z",
-  },
-  {
-    id: 3,
-    houseNumber: "C-304",
-    ownerName: "Raj Patel",
-    phone: "+91-7654321098",
-    email: "raj.patel@example.com",
-    flatType: "4 BHK Luxury",
-    maintenance: 7800,
-    isPaid: true,
-    updatedAt: "2025-03-28T09:45:00Z",
-  },
-  {
-    id: 4,
-    houseNumber: "A-203",
-    ownerName: "Maria Garcia",
-    phone: "+91-6543210987",
-    email: "maria.g@example.com",
-    flatType: "2 BHK Premium",
-    maintenance: 4200,
-    isPaid: false,
-    updatedAt: "2025-04-05T11:20:00Z",
-  },
-  {
-    id: 5,
-    houseNumber: "D-401",
-    ownerName: "David Chen",
-    phone: "+91-9876543211",
-    email: "david.chen@example.com",
-    flatType: "3 BHK Standard",
-    maintenance: 4800,
-    isPaid: true,
-    updatedAt: "2025-03-22T16:10:00Z",
-  },
-  {
-    id: 6,
-    houseNumber: "B-107",
-    ownerName: "Priya Sharma",
-    phone: "+91-8765432100",
-    email: "priya.s@example.com",
-    flatType: "1 BHK Standard",
-    maintenance: 2500,
-    isPaid: false,
-    updatedAt: "2025-04-10T08:30:00Z",
-  },
-];
-
 const Properties = () => {
   const [properties, setProperties] = useState([]);
+  const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    paymentStatus: "all", // all, paid, unpaid
+    flatType: "all",
+  });
+  const [flatTypes, setFlatTypes] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     paid: 0,
@@ -81,31 +20,80 @@ const Properties = () => {
   });
 
   useEffect(() => {
-    // Try to fetch from API first
-    fetch("http://localhost:8080/api/admin/properties")
-      .then((res) => res.json())
-      .then((data) => {
-        setProperties(data);
-        calculateStats(data);
+    // Fetch data from the API
+    fetch("http://localhost:3000/api/v1/user/all")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((responseData) => {
+        // Extract the users array from the response
+        if (responseData && responseData.users) {
+          const userData = responseData.users;
+          setProperties(userData);
+          setFilteredProperties(userData);
+          calculateStats(userData);
+
+          // Extract unique flat types for filter dropdown
+          const uniqueFlatTypes = [
+            ...new Set(userData.map((p) => p.flatType).filter(Boolean)),
+          ];
+          setFlatTypes(uniqueFlatTypes);
+        } else {
+          throw new Error("Invalid data format received from API");
+        }
       })
       .catch((err) => {
-        console.error("Using dummy data due to:", err);
-        // Use dummy data if API fails
-        setProperties(dummyProperties);
-        calculateStats(dummyProperties);
+        console.error("Error fetching properties:", err);
+        setError(err.message);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Apply search and filters
+  useEffect(() => {
+    let result = [...properties];
+
+    // Apply payment status filter
+    if (filters.paymentStatus !== "all") {
+      const isPaid = filters.paymentStatus === "paid";
+      result = result.filter((property) => property.isPaid === isPaid);
+    }
+
+    // Apply flat type filter
+    if (filters.flatType !== "all") {
+      result = result.filter(
+        (property) => property.flatType === filters.flatType
+      );
+    }
+
+    // Apply search term
+    if (searchTerm.trim() !== "") {
+      const lowercasedSearch = searchTerm.toLowerCase();
+      result = result.filter(
+        (property) =>
+          property.houseNumber?.toLowerCase().includes(lowercasedSearch) ||
+          property.ownerName?.toLowerCase().includes(lowercasedSearch) ||
+          property.email?.toLowerCase().includes(lowercasedSearch) ||
+          property.phoneNumber?.includes(searchTerm) ||
+          property.flatType?.toLowerCase().includes(lowercasedSearch)
+      );
+    }
+
+    setFilteredProperties(result);
+  }, [searchTerm, filters, properties]);
 
   const calculateStats = (data) => {
     const paidProperties = data.filter((p) => p.isPaid);
     const unpaidProperties = data.filter((p) => !p.isPaid);
     const totalMaintenance = data.reduce(
-      (acc, curr) => acc + curr.maintenance,
+      (acc, curr) => acc + (curr.maintenance || 0),
       0
     );
     const collectedMaintenance = paidProperties.reduce(
-      (acc, curr) => acc + curr.maintenance,
+      (acc, curr) => acc + (curr.maintenance || 0),
       0
     );
 
@@ -118,10 +106,39 @@ const Properties = () => {
     });
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilters({
+      paymentStatus: "all",
+      flatType: "all",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-xl text-gray-600">Loading properties...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-xl text-red-600">
+          Error loading properties: {error}
+        </div>
       </div>
     );
   }
@@ -137,64 +154,110 @@ const Properties = () => {
         </p>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-gray-500 text-sm font-medium">
-              Total Properties
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Properties
             </h3>
-            <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-gray-500 text-sm font-medium">
-              Maintenance Paid
-            </h3>
-            <p className="text-2xl font-bold text-green-600">{stats.paid}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-gray-500 text-sm font-medium">
-              Maintenance Pending
-            </h3>
-            <p className="text-2xl font-bold text-red-600">{stats.unpaid}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="text-gray-500 text-sm font-medium">
-              Collection Rate
-            </h3>
-            <p className="text-2xl font-bold text-blue-600">
-              {stats.total ? Math.round((stats.paid / stats.total) * 100) : 0}%
-            </p>
+            <div className="flex justify-between items-center">
+              <p className="text-3xl font-bold text-indigo-600">
+                {stats.total}
+              </p>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  {stats.paid} Paid
+                </span>
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  {stats.unpaid} Unpaid
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Financial Summary */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
-            Financial Summary
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-gray-500 text-sm font-medium">
-                Total Maintenance
-              </h3>
-              <p className="text-2xl font-bold text-gray-800">
-                ₹{stats.totalMaintenance.toLocaleString()}
-              </p>
+        {/* Search and Filters */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Search Bar */}
+            <div className="relative flex-grow md:max-w-md">
+              <input
+                type="text"
+                placeholder="Search properties..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-gray-500 text-sm font-medium">Collected</h3>
-              <p className="text-2xl font-bold text-green-600">
-                ₹{stats.collectedMaintenance.toLocaleString()}
-              </p>
+
+            <div className="flex flex-wrap gap-3">
+              {/* Payment Status Filter */}
+              <div>
+                <select
+                  value={filters.paymentStatus}
+                  onChange={(e) =>
+                    handleFilterChange("paymentStatus", e.target.value)
+                  }
+                  className="py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="paid">Paid</option>
+                  <option value="unpaid">Unpaid</option>
+                </select>
+              </div>
+
+              {/* Flat Type Filter */}
+              <div>
+                <select
+                  value={filters.flatType}
+                  onChange={(e) =>
+                    handleFilterChange("flatType", e.target.value)
+                  }
+                  className="py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="all">All Flat Types</option>
+                  {flatTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(searchTerm ||
+                filters.paymentStatus !== "all" ||
+                filters.flatType !== "all") && (
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-gray-500 text-sm font-medium">Pending</h3>
-              <p className="text-2xl font-bold text-red-600">
-                ₹
-                {(
-                  stats.totalMaintenance - stats.collectedMaintenance
-                ).toLocaleString()}
-              </p>
-            </div>
+          </div>
+
+          {/* Filter Summary */}
+          <div className="mt-4 text-sm text-gray-500">
+            Showing {filteredProperties.length} of {properties.length}{" "}
+            properties
+            {(searchTerm ||
+              filters.paymentStatus !== "all" ||
+              filters.flatType !== "all") && <span> (filtered)</span>}
           </div>
         </div>
 
@@ -202,62 +265,76 @@ const Properties = () => {
           All Registered Properties
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.map((property) => (
-            <div
-              key={property.id}
-              className="bg-white rounded-lg shadow overflow-hidden"
-            >
-              <div className="p-1 bg-indigo-600"></div>
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-4">
-                  <h2 className="text-xl font-bold text-indigo-600">
-                    {property.houseNumber}
-                  </h2>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      property.isPaid
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {property.isPaid ? "Paid" : "Unpaid"}
-                  </span>
-                </div>
+        {filteredProperties.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <p className="text-xl text-gray-600">
+              No properties found matching your criteria
+            </p>
+            {(searchTerm ||
+              filters.paymentStatus !== "all" ||
+              filters.flatType !== "all") && (
+              <button
+                onClick={clearFilters}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProperties.map((property) => (
+              <div
+                key={property._id || property.id}
+                className="bg-white rounded-lg shadow overflow-hidden"
+              >
+                <div className="p-1 bg-indigo-600"></div>
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-xl font-bold text-indigo-600">
+                      {property.houseNumber}
+                    </h2>
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        property.isPaid
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {property.isPaid ? "Paid" : "Unpaid"}
+                    </span>
+                  </div>
 
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                  {property.ownerName}
-                </h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                    {property.ownerName}
+                  </h3>
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium">{property.phone}</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p className="font-medium">{property.phoneNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium truncate">{property.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Flat Type</p>
+                      <p className="font-medium">{property.flatType}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium truncate">{property.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Flat Type</p>
-                    <p className="font-medium">{property.flatType}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Maintenance</p>
-                    <p className="font-medium">
-                      ₹{property.maintenance.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
-                  Last Updated:{" "}
-                  {new Date(property.updatedAt).toLocaleDateString()}
+                  <div className="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-100">
+                    Last Updated:{" "}
+                    {property.updatedAt
+                      ? new Date(property.updatedAt).toLocaleDateString()
+                      : "N/A"}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
