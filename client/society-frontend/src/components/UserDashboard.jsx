@@ -34,7 +34,7 @@ const UserDashboard = ({ user }) => {
     { month: "March", amount: 500, status: "Unpaid", date: null },
     { month: "April", amount: 500, status: "Unpaid", date: null },
   ]);
-
+  const url = import.meta.env.VITE_API_URL;
   const quotes = [
     "Great things take time, but they're worth the wait.",
     "Every rupee you spend keeps your society running!",
@@ -100,7 +100,8 @@ const UserDashboard = ({ user }) => {
 
     try {
       const response = await fetch(
-        "http://localhost:3000/api/v1/problem/user-problem",
+        `${url}/api/v1/problem/user-problem`,
+        // "proc/api/v1/problem/user-problem",
         {
           method: "GET",
           headers: {
@@ -312,16 +313,13 @@ const UserDashboard = ({ user }) => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/v1/problem/report",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${url}/api/v1/problem/report`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       // Set loading state to false
       setIsSubmitting(false);

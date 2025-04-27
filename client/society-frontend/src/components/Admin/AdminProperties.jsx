@@ -10,6 +10,8 @@ const Properties = () => {
     paymentStatus: "all", // all, paid, unpaid
     flatType: "all",
   });
+  const url = import.meta.env.VITE_API_URL;
+
   const [flatTypes, setFlatTypes] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -21,7 +23,7 @@ const Properties = () => {
 
   useEffect(() => {
     // Fetch data from the API
-    fetch("http://localhost:3000/api/v1/user/all")
+    fetch(`${url}/api/v1/user/all`)
       .then((res) => {
         if (!res.ok) {
           throw new Error(`HTTP error! Status: ${res.status}`);

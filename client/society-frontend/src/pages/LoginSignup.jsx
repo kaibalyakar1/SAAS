@@ -23,7 +23,7 @@ const LoginSignup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const baseURL = "http://localhost:3000/api/v1/auth"; // 👈 your backend URL
+    const baseURL = import.meta.env.VITE_API_URL; // 👈 your backend URL
     if (isLogin) {
       if (!formData.phone || !formData.password) {
         Swal.fire("Error", "Please fill in all fields!", "error");
@@ -41,7 +41,7 @@ const LoginSignup = () => {
 
       // 👉 Normal User Login
       try {
-        const res = await axios.post(`${baseURL}/login`, {
+        const res = await axios.post(`${baseURL}/api/v1/auth/login`, {
           phoneNumber: formData.phone,
           password: formData.password,
         });
@@ -83,7 +83,7 @@ const LoginSignup = () => {
       }
 
       try {
-        const res = await axios.post(`${baseURL}/signup`, {
+        const res = await axios.post(`${baseURL}/api/v1/auth/signup`, {
           ownerName: formData.name,
           phoneNumber: formData.phone,
           email: formData.email,

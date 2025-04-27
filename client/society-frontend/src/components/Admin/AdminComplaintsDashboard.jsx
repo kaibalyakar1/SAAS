@@ -20,6 +20,7 @@ const ComplaintsComponent = () => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const url = import.meta.env.VITE_API_URL;
 
   const [newComplaint, setNewComplaint] = useState({
     houseNo: "",
@@ -37,14 +38,11 @@ const ComplaintsComponent = () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(
-          "http://localhost:3000/api/v1/problem/all-problems",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${url}/api/v1/problem/all-problems`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch complaints");
@@ -100,16 +98,13 @@ const ComplaintsComponent = () => {
         formData.append("image", newComplaint.proof);
       }
 
-      const response = await fetch(
-        "http://localhost:3000/api/v1/problem/report",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${url}/api/v1/problem/report`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (!response.ok) {
         throw new Error("Failed to submit complaint");
@@ -117,7 +112,7 @@ const ComplaintsComponent = () => {
 
       // Refresh complaints list
       const refreshResponse = await fetch(
-        "http://localhost:3000/api/v1/problem/all-problems",
+        `${url}/api/v1/problem/all-problems`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -170,7 +165,7 @@ const ComplaintsComponent = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:3000/api/v1/problem/problem-status/${id}`,
+        `${url}/api/v1/problem/problem-status/${id}`,
         {
           method: "PUT",
           headers: {
@@ -204,7 +199,7 @@ const ComplaintsComponent = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:3000/api/v1/problem/problem-delete/${id}`,
+        `${url}/api/v1/problem/problem-delete/${id}`,
         {
           method: "DELETE",
         }

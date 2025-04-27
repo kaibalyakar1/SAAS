@@ -42,6 +42,7 @@ const ExpensesComponent = () => {
 
   // Current expense being edited
   const [editExpense, setEditExpense] = useState(null);
+  const url = import.meta.env.VITE_API_URL;
 
   // Generate month names for display
   const months = [
@@ -69,10 +70,7 @@ const ExpensesComponent = () => {
   const fetchMonthlyExpenses = async (month, year) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/v1/expense/get/${formatMonthForAPI(
-          month,
-          year
-        )}`
+        `${url}/api/v1/expense/get/${formatMonthForAPI(month, year)}`
       );
       if (!response.ok) throw new Error(`Error: ${response.status}`);
       const data = await response.json();
@@ -99,7 +97,7 @@ const ExpensesComponent = () => {
   // Fetch total expenses
   const fetchTotalExpenses = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/v1/expense/sum");
+      const response = await fetch(`${url}/api/v1/expense/sum}`);
       if (!response.ok) throw new Error(`Error: ${response.status}`);
       const data = await response.json();
       setTotalAllExpense(data);
@@ -355,7 +353,7 @@ const ExpensesComponent = () => {
   // Fetch all expenses (for the table)
   const fetchAllExpenses = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/v1/expense/all");
+      const response = await fetch(`${url}/api/v1/expense/all}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -399,7 +397,7 @@ const ExpensesComponent = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/api/v1/expense/add", {
+      const response = await fetch(`${url}/api/v1/expense/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -440,12 +438,9 @@ const ExpensesComponent = () => {
     if (!confirm("Are you sure you want to delete this expense?")) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/v1/expense/delete/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`${url}/api/v1/expense/delete/${id}`, {
+        method: "DELETE",
+      });
 
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
@@ -481,7 +476,7 @@ const ExpensesComponent = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/v1/expense/update/${editExpense}`,
+        `${url}/api/v1/expense/update/${editExpense}`,
         {
           method: "PUT",
           headers: {
