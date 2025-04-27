@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useReducer, useRef, useState } from "react";
 import { Menu, X } from "lucide-react";
-import logo from "../assets/logo.png"; // Adjust the path to your logo
+import logo from "../assets/LOGO.png"; // Adjust the path to your logo
 import { useScroll } from "../context/ScrollContext";
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
