@@ -1,11 +1,13 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom"; // 👈 add this
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const LoginSignup = () => {
-  const navigate = useNavigate(); // 👈 initialize
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  // 👇 Added loading state
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     phone: "",
     password: "",
@@ -23,23 +25,29 @@ const LoginSignup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const baseURL = import.meta.env.VITE_API_URL; // 👈 your backend URL
+    const baseURL = import.meta.env.VITE_API_URL;
+
+    // 👇 Set loading to true when request starts
+    setIsLoading(true);
+
     if (isLogin) {
       if (!formData.phone || !formData.password) {
         Swal.fire("Error", "Please fill in all fields!", "error");
+        setIsLoading(false);
         return;
       }
-      console.log("Form Data:", formData); // 👈 log form data
+      console.log("Form Data:", formData);
 
-      // 👉 Static Admin Login Check
+      // Static Admin Login Check
       if (formData.phone === "7978797141" && formData.password === "NV1234") {
+        setIsLoading(false);
         Swal.fire("Admin Login", "Welcome Admin!", "success").then(() => {
           navigate("/dashboard/admin");
         });
         return;
       }
 
-      // 👉 Normal User Login
+      // Normal User Login
       try {
         const res = await axios.post(`${baseURL}/api/v1/auth/login`, {
           phoneNumber: formData.phone,
@@ -47,6 +55,8 @@ const LoginSignup = () => {
         });
 
         const { success, user, token, message } = res.data;
+        setIsLoading(false);
+
         if (success) {
           Swal.fire("Login Successful", message, "success").then(() => {
             localStorage.setItem("token", token);
@@ -57,6 +67,7 @@ const LoginSignup = () => {
           Swal.fire("Login Failed", message, "error");
         }
       } catch (err) {
+        setIsLoading(false);
         Swal.fire(
           "Error",
           err.response?.data?.message || "Server error",
@@ -74,11 +85,13 @@ const LoginSignup = () => {
         !formData.houseNumber
       ) {
         Swal.fire("Error", "Please fill in all fields!", "error");
+        setIsLoading(false);
         return;
       }
 
       if (formData.password !== formData.confirmPassword) {
         Swal.fire("Error", "Passwords do not match!", "error");
+        setIsLoading(false);
         return;
       }
 
@@ -92,16 +105,18 @@ const LoginSignup = () => {
           role: formData.role,
           password: formData.password,
         });
-        console.log("Form Data:", formData); // 👈 log form data
+        console.log("Form Data:", formData);
+
+        setIsLoading(false);
 
         if (res.data.success) {
-          // 👈 Check res.data.success instead of res.success
           Swal.fire("Signup Successful", "Account created!", "success");
           setTimeout(() => setIsLogin(true), 1000);
         } else {
           Swal.fire("Error", res.data.message || "Signup failed", "error");
         }
       } catch (err) {
+        setIsLoading(false);
         Swal.fire(
           "Error",
           err.response?.data?.message || "Server error",
@@ -207,9 +222,37 @@ const LoginSignup = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition duration-300"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center"
+            disabled={isLoading}
           >
-            {isLogin ? "Login" : "Create Account"}
+            {isLoading ? (
+              // 👇 Loading spinner
+              <div className="flex items-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                {isLogin ? "Logging in..." : "Creating Account..."}
+              </div>
+            ) : (
+              <span>{isLogin ? "Login" : "Create Account"}</span>
+            )}
           </button>
         </form>
 
@@ -219,6 +262,7 @@ const LoginSignup = () => {
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:underline font-medium"
+              disabled={isLoading}
             >
               {isLogin ? "Signup" : "Login"}
             </button>
