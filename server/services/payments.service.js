@@ -8,7 +8,11 @@ dotenv.config({ path: "../../.env" });
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error("Razorpay credentials missing in environment variables");
 }
-
+console.log(
+  "Razorpay credentials loaded",
+  process.env.RAZORPAY_KEY_ID,
+  process.env.RAZORPAY_KEY_SECRET
+);
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
