@@ -18,6 +18,7 @@ const UserWelcome = ({
   const [randomQuote, setRandomQuote] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const url = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     setRandomQuote(quotes[Math.floor(Math.random() * quotes.length)]);
@@ -30,20 +31,17 @@ const UserWelcome = ({
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:3000/api/v1/payment/create-order`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            month: currentMonth,
-            year: new Date().getFullYear().toString(),
-          }),
-        }
-      );
+      const response = await fetch(`${url}/api/v1/payment/create-order`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          month: currentMonth,
+          year: new Date().getFullYear().toString(),
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -119,21 +117,18 @@ const UserWelcome = ({
   // Verify payment with backend
   const verifyPayment = async (paymentResponse, token) => {
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/v1/payment/verify`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            razorpay_payment_id: paymentResponse.razorpay_payment_id,
-            razorpay_order_id: paymentResponse.razorpay_order_id,
-            razorpay_signature: paymentResponse.razorpay_signature,
-          }),
-        }
-      );
+      const response = await fetch(`${url}/api/v1/payment/verify`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: paymentResponse.razorpay_payment_id,
+          razorpay_order_id: paymentResponse.razorpay_order_id,
+          razorpay_signature: paymentResponse.razorpay_signature,
+        }),
+      });
 
       const data = await response.json();
 

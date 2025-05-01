@@ -105,16 +105,13 @@ const UserDashboard = ({ user }) => {
     try {
       const token = localStorage.getItem("token");
       console.log("token", token);
-      const response = await fetch(
-        `http://localhost:3000/api/v1/payment/my-payments`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${url}/api/v1/payment/my-payments`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (response.status === 200) {
         const data = await response.json();
@@ -148,20 +145,17 @@ const UserDashboard = ({ user }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `http://localhost:3000/api/v1/payment/create-order`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            month: currentMonth,
-            year: new Date().getFullYear().toString(),
-          }),
-        }
-      );
+      const response = await fetch(`${url}/api/v1/payment/create-order`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          month: currentMonth,
+          year: new Date().getFullYear().toString(),
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -234,21 +228,18 @@ const UserDashboard = ({ user }) => {
     }
   };
   const verifyPayment = async (response, token) => {
-    const verification = await fetch(
-      `http://localhost:3000/api/v1/payment/verify`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_signature: response.razorpay_signature,
-        }),
-      }
-    );
+    const verification = await fetch(`${url}/api/v1/payment/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_signature: response.razorpay_signature,
+      }),
+    });
 
     if (!verification.ok) {
       const error = await verification.json();
