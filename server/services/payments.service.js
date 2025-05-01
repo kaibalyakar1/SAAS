@@ -1,11 +1,19 @@
 import dotenv from "dotenv";
 import Razorpay from "razorpay";
-dotenv.config();
+
+// Load environment variables FIRST
+dotenv.config({ path: "../../.env" });
+
+// Verify environment variables are loaded
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  throw new Error("Razorpay credentials missing in environment variables");
+}
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
+
 export const createRazorpayOrder = async (amountInRupees, receiptId) => {
   try {
     const options = {
@@ -13,12 +21,12 @@ export const createRazorpayOrder = async (amountInRupees, receiptId) => {
       currency: "INR",
       receipt: receiptId,
       payment_capture: 1,
-      method: "upi", // enforces UPI
     };
 
     const order = await razorpayInstance.orders.create(options);
     return order;
   } catch (err) {
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Razorpay order creation error:", err);
+    throw new Error("Failed to create Razorpay order");
   }
 };
