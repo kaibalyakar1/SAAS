@@ -8,11 +8,18 @@ import expenseRoutes from "./routes/expense.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import connectDB from "./config/db.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 const app = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Middleware
+app.use(express.static(path.join(__dirname, "client/dist")));
+
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
