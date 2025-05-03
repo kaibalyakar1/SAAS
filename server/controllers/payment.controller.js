@@ -14,7 +14,6 @@ export const createPayment = async (req, res) => {
   const user = req.user;
 
   try {
-    // Check if payment already exists for this month/year
     const existingPayment = await Payment.findOne({
       houseNumber: user.houseNumber,
       month: new Date().toLocaleString("default", { month: "long" }),
@@ -29,11 +28,11 @@ export const createPayment = async (req, res) => {
       });
     }
 
-    const amount = FLAT_PRICING[user.flatType];
+    const amount = user.amount;
     if (!amount) {
       return res.status(400).json({
         success: false,
-        message: "Flat type not found",
+        message: "Payment amount not set for this user",
       });
     }
 
@@ -179,6 +178,10 @@ export const getMyPayments = async (req, res) => {
     });
   } catch (err) {
     // ... error handling
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 export const getAllPayments = async (req, res) => {

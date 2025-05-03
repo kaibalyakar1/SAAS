@@ -162,7 +162,7 @@ const UserDashboard = ({ user }) => {
         throw new Error(error.message || "Failed to create payment order");
       }
 
-      const { order, user } = await response.json();
+      const { order, user: paymentUser } = await response.json();
 
       // Load Razorpay script
       const script = document.createElement("script");
@@ -178,7 +178,7 @@ const UserDashboard = ({ user }) => {
           description: `Maintenance Payment for ${currentMonth} ${new Date().getFullYear()}`,
           image: "/logo.png",
           order_id: order.id,
-          handler: function (response) {
+          handler: async function (response) {
             // Show processing modal
             Swal.fire({
               title: "Processing Payment",
@@ -190,7 +190,7 @@ const UserDashboard = ({ user }) => {
             });
 
             // Verify payment
-            verifyPayment(response, token);
+            await verifyPayment(response, token);
           },
           prefill: {
             name: user.ownerName,
@@ -227,30 +227,46 @@ const UserDashboard = ({ user }) => {
       setIsProcessing(false);
     }
   };
-  const verifyPayment = async (response, token) => {
-    const verification = await fetch(`${url}/api/v1/payment/verify`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        razorpay_payment_id: response.razorpay_payment_id,
-        razorpay_order_id: response.razorpay_order_id,
-        razorpay_signature: response.razorpay_signature,
-      }),
-    });
 
-    if (!verification.ok) {
-      const error = await verification.json();
-      throw new Error(error.message || "Payment verification failed");
+  const verifyPayment = async (paymentResponse, token) => {
+    try {
+      const response = await fetch(`${url}/api/v1/payment/verify`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: paymentResponse.razorpay_payment_id,
+          razorpay_order_id: paymentResponse.razorpay_order_id,
+          razorpay_signature: paymentResponse.razorpay_signature,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Payment Successful",
+          text: "Your maintenance payment has been received.",
+          confirmButtonColor: "#4F46E5",
+        });
+        // Refresh payment data
+        await fetchPaymentHistory();
+      } else {
+        throw new Error(data.message || "Payment verification failed");
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Verification Failed",
+        text:
+          error.message ||
+          "Could not verify your payment. Please contact admin.",
+        confirmButtonColor: "#4F46E5",
+      });
     }
-
-    Swal.fire({
-      icon: "success",
-      title: "Payment Successful!",
-      text: "Your payment has been processed successfully.",
-    });
   };
 
   // Separate function to handle payment verification
@@ -581,6 +597,8 @@ const UserDashboard = ({ user }) => {
           unpaid={unpaid}
           currentPayment={currentPayment}
           currentMonth={currentMonth}
+          onPayNow={handlePayNow}
+          isProcessing={isProcessing}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

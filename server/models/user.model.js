@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
       enum: ["1FLOOR", "2FLOOR", "2.5FLOOR", "3FLOOR"],
       default: "1FLOOR",
     },
+    amount: {
+      type: Number,
+      required: true,
+    },
+
     role: {
       type: String,
       required: true,

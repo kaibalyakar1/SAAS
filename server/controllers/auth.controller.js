@@ -29,8 +29,15 @@ export const signUp = async (req, res) => {
         .status(400)
         .json({ success: false, message: "User already exists" });
     }
-
+    const amountMap = {
+      "1FLOOR": 1,
+      "2FLOOR": 2,
+      "2.5FLOOR": 3,
+      "3FLOOR": 4,
+    };
+    const amount = amountMap[flatType] || 1; // Default to 1 if flatType is not recognized
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       houseNumber,
       ownerName,
@@ -40,6 +47,7 @@ export const signUp = async (req, res) => {
       role,
       password: hashedPassword,
       isVerified: false,
+      amount,
     });
 
     await newUser.save();
