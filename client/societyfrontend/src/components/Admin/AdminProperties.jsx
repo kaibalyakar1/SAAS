@@ -63,7 +63,7 @@ const Properties = () => {
       const isPaid = filters.paymentStatus === "paid";
       result = result.filter((property) => property.isPaid === isPaid);
     }
-
+    console.log("Filtered Properties", result);
     // Apply flat type filter
     if (filters.flatType !== "all") {
       result = result.filter(
@@ -151,31 +151,9 @@ const Properties = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           Properties Dashboard
         </h1>
-        <p className="text-gray-600 mb-6">
-          Manage and monitor all registered properties
-        </p>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Properties
-            </h3>
-            <div className="flex justify-between items-center">
-              <p className="text-3xl font-bold text-indigo-600">
-                {stats.total}
-              </p>
-              <div className="flex gap-2">
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  {stats.paid} Paid
-                </span>
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                  {stats.unpaid} Unpaid
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"></div>
 
         {/* Search and Filters */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -207,19 +185,6 @@ const Properties = () => {
 
             <div className="flex flex-wrap gap-3">
               {/* Payment Status Filter */}
-              <div>
-                <select
-                  value={filters.paymentStatus}
-                  onChange={(e) =>
-                    handleFilterChange("paymentStatus", e.target.value)
-                  }
-                  className="py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="paid">Paid</option>
-                  <option value="unpaid">Unpaid</option>
-                </select>
-              </div>
 
               {/* Flat Type Filter */}
               <div>
@@ -296,15 +261,6 @@ const Properties = () => {
                     <h2 className="text-xl font-bold text-indigo-600">
                       {property.houseNumber}
                     </h2>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        property.isPaid
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {property.isPaid ? "Paid" : "Unpaid"}
-                    </span>
                   </div>
 
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">

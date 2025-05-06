@@ -20,7 +20,7 @@ const UserWelcome = ({
   useEffect(() => {
     setRandomQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, []);
-
+  console.log("userdcad", user);
   return (
     <div className="mb-8 bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500 transform hover:scale-102 transition-transform duration-300">
       <h2 className="text-2xl font-bold text-gray-800">
@@ -81,7 +81,10 @@ const UserWelcome = ({
                     Processing...
                   </>
                 ) : (
-                  <>Pay Now ₹{currentPayment?.amount}</>
+                  <>
+                    Pay Now ₹
+                    {!currentPayment ? user?.amount : currentPayment?.amount}
+                  </>
                 )}
               </button>
             </div>

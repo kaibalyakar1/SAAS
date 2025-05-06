@@ -6,8 +6,9 @@ const Sidebar = ({ user, closeSidebar }) => {
   const navigate = useNavigate();
   console.log("Sidebar user:", user); // Debugging line
   const { ownerName } = user;
-  const handleLogout = () => {
-    Swal.fire({
+  const url = import.meta.env.VITE_API_URL;
+  const handleLogout = async () => {
+    const result = await Swal.fire({
       title: "Are you sure?",
       text: "You want to logout!",
       icon: "warning",
@@ -15,13 +16,40 @@ const Sidebar = ({ user, closeSidebar }) => {
       confirmButtonColor: "#0ea5e9",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, logout!",
-    }).then((result) => {
-      if (result.isConfirmed) {
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const token = localStorage.getItem("token");
+
+        // Call the logout API endpoint
+        const response = await fetch(`${url}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Logout failed");
+        }
+
+        // Clear client-side storage
+        localStorage.clear();
+
+        // Redirect to login/signup page
+        navigate("/signup");
+
+        Swal.fire("Logged out!", "You have been logged out.", "success");
+      } catch (error) {
+        console.error("Logout error:", error);
+        // Even if API logout fails, clear client-side and redirect
         localStorage.clear();
         navigate("/signup");
         Swal.fire("Logged out!", "You have been logged out.", "success");
       }
-    });
+    }
   };
 
   const redirectToConstruction = () => {

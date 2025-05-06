@@ -36,7 +36,7 @@ const UserDashboard = ({ user }) => {
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
+  console.log("user", user);
   const [isLoadingProblems, setIsLoadingProblems] = useState(false);
   const [showProblemModal, setShowProblemModal] = useState(false);
   const [showProblemsTable, setShowProblemsTable] = useState(false);
@@ -48,6 +48,7 @@ const UserDashboard = ({ user }) => {
     category: "General",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState(null);
 
   const url = import.meta.env.VITE_API_URL;
 
@@ -76,7 +77,7 @@ const UserDashboard = ({ user }) => {
     return paymentMonth === currentMonth && p.year === currentYear.toString();
   });
 
-  const unpaid = !currentPayment || currentPayment.status !== "paid";
+  const unpaid = !currentPayment || currentPayment.status !== "success";
 
   // Debug logs
   useEffect(() => {
@@ -138,7 +139,6 @@ const UserDashboard = ({ user }) => {
   };
 
   // Initialize Razorpay payment
-  // In UserDashboard component
   const handlePayNow = async () => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -268,12 +268,93 @@ const UserDashboard = ({ user }) => {
       });
     }
   };
+  const recordCancelledPayment = async (token, orderId) => {
+    if (!orderId) {
+      console.log("No order ID to record cancellation for");
+      return;
+    }
 
-  // Separate function to handle payment verification
+    try {
+      console.log("Recording cancelled payment for order:", orderId);
+      const response = await fetch(`${url}/api/v1/payment/cancelled`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          razorpay_order_id: orderId,
+          houseNumber: user.houseNumber,
+          month: currentMonth,
+          year: currentYear.toString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to record cancelled payment:", errorData);
+        throw new Error(
+          errorData.message || "Failed to record cancelled payment"
+        );
+      }
+
+      console.log("Cancelled payment recorded successfully");
+      // Refresh payment history
+      await fetchPaymentHistory();
+    } catch (error) {
+      console.error("Error recording cancelled payment:", error);
+      Swal.fire({
+        icon: "warning",
+        title: "Payment Cancelled",
+        text: "Your payment process was cancelled",
+        confirmButtonColor: "#4F46E5",
+      });
+    }
+  };
+
+  const recordFailedPayment = async (response, token) => {
+    try {
+      console.log("Recording failed payment:", response);
+      const result = await fetch(`${url}/api/v1/payment/failed`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: response.error.metadata.payment_id || "",
+          razorpay_order_id: response.error.metadata.order_id || "",
+          razorpay_signature: response.error.metadata.payment_id || "",
+          error: response.error.description || "Payment failed",
+          houseNumber: user.houseNumber,
+          month: currentMonth,
+          year: currentYear.toString(),
+        }),
+      });
+
+      if (!result.ok) {
+        const errorData = await result.json();
+        throw new Error(
+          errorData.message || "Failed to record payment failure"
+        );
+      }
+
+      const data = await result.json();
+      console.log("Failed payment recorded:", data);
+
+      // Refresh payment history
+      await fetchPaymentHistory();
+
+      return data;
+    } catch (error) {
+      console.error("Failed to record payment failure:", error);
+      throw error;
+    }
+  };
 
   // Generate PDF receipt
   const generateBill = (payment) => {
-    if (!payment || payment.status !== "paid") {
+    if (!payment || payment.status !== "success") {
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -540,6 +621,18 @@ const UserDashboard = ({ user }) => {
     }
   };
 
+  // Cleanup on unmount - ensure we don't have orphaned payment orders
+  useEffect(() => {
+    return () => {
+      // If there's an active order when component unmounts,
+      // try to mark it as cancelled
+      if (currentOrderId) {
+        const token = localStorage.getItem("token");
+        recordCancelledPayment(token, currentOrderId);
+      }
+    };
+  }, [currentOrderId]);
+
   useEffect(() => {
     fetchPaymentHistory();
   }, []);
@@ -566,11 +659,7 @@ const UserDashboard = ({ user }) => {
             },
           }).then((result) => {
             if (result.isConfirmed) {
-              handlePayNow({
-                month: currentMonth,
-                year: currentYear.toString(),
-                amount: currentPayment.amount,
-              });
+              handlePayNow();
             }
           });
         } catch (error) {
@@ -587,7 +676,7 @@ const UserDashboard = ({ user }) => {
     }
   }, [unpaid, currentPayment, currentMonth, currentYear]);
 
-  console.log(currentPayment);
+  console.log("xxxxxx", currentPayment);
   return (
     <div className="min-h-screen w-full bg-gray-50">
       {/* Main Content */}
@@ -628,13 +717,19 @@ const UserDashboard = ({ user }) => {
                 <div className="flex justify-between mb-2">
                   <span className="text-gray-600">Paid</span>
                   <span className="font-medium text-green-600">
-                    {paymentHistory.filter((p) => p.status === "paid").length}
+                    {
+                      paymentHistory.filter((p) => p.status === "success")
+                        .length
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Pending</span>
+                  <span className="text-gray-600">Pending/Failed</span>
                   <span className="font-medium text-red-600">
-                    {paymentHistory.filter((p) => p.status !== "paid").length}
+                    {
+                      paymentHistory.filter((p) => p.status !== "success")
+                        .length
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between mb-2">
@@ -642,7 +737,7 @@ const UserDashboard = ({ user }) => {
                   <span className="font-medium">
                     ₹
                     {paymentHistory
-                      .filter((p) => p.status === "paid")
+                      .filter((p) => p.status === "success")
                       .reduce((sum, p) => sum + p.amount, 0)}
                   </span>
                 </div>
@@ -654,7 +749,7 @@ const UserDashboard = ({ user }) => {
                     className="h-full bg-green-500 rounded-full"
                     style={{
                       width: `${
-                        (paymentHistory.filter((p) => p.status === "paid")
+                        (paymentHistory.filter((p) => p.status === "success")
                           .length /
                           Math.max(paymentHistory.length, 1)) *
                         100
@@ -664,7 +759,8 @@ const UserDashboard = ({ user }) => {
                 </div>
                 <div className="text-center mt-2 text-sm text-gray-600">
                   {Math.round(
-                    (paymentHistory.filter((p) => p.status === "paid").length /
+                    (paymentHistory.filter((p) => p.status === "success")
+                      .length /
                       Math.max(paymentHistory.length, 1)) *
                       100
                   )}

@@ -1,13 +1,13 @@
 import { Pie, Bar } from "react-chartjs-2";
 
 const AnalyticsCharts = ({ paymentHistory }) => {
-  const paid = paymentHistory.filter((p) => p.status === "paid").length;
+  const paid = paymentHistory.filter((p) => p.status === "success").length;
   const unpaidCount = paymentHistory.filter(
-    (p) => p.status === "unpaid"
+    (p) => p.status === "failed" || p.status === "pending"
   ).length;
 
   const pieData = {
-    labels: ["paid", "unpaid"],
+    labels: ["success", "unpaid"],
     datasets: [
       {
         data: [paid, unpaidCount],
@@ -32,7 +32,9 @@ const AnalyticsCharts = ({ paymentHistory }) => {
     datasets: [
       {
         label: "Maintenance Payment",
-        data: paymentHistory.map((p) => (p.status === "paid" ? p.amount : 0)),
+        data: paymentHistory.map((p) =>
+          p.status === "success" ? p.amount : 0
+        ),
         backgroundColor: "#60A5FA",
         borderColor: "#3B82F6",
         borderWidth: 1,

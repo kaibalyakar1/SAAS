@@ -5,6 +5,7 @@ import ExpensesComponent from "../components/Admin/AdminExpenses";
 import Properties from "../components/Admin/AdminProperties";
 import AdminDashboard from "../components/Admin/AdminHomeDashboard";
 import UnderConstruction from "./UnderConstruction";
+import AdminPayments from "../components/Admin/AdminPayments";
 
 const MainComponent = () => {
   const [activeComponent, setActiveComponent] = useState("dashboard");
@@ -17,24 +18,26 @@ const MainComponent = () => {
         return <Properties />;
       case "expenses":
         return <ExpensesComponent />;
-
       case "complaints":
         return <ComplaintsComponent />;
-
       case "payments":
-        return <UnderConstruction />;
+        return <AdminPayments />;
       default:
         return <div>Dashboard Content</div>;
     }
   };
 
   return (
-    <div className="w-[100vw] flex">
-      <AdminSidebar
-        activeComponent={activeComponent}
-        setActiveComponent={setActiveComponent}
-      />
-      <div className="flex-1 p-4">{renderComponent()}</div>
+    <div className="flex h-screen w-screen overflow-hidden">
+      <div className="fixed h-full">
+        <AdminSidebar
+          activeComponent={activeComponent}
+          setActiveComponent={setActiveComponent}
+        />
+      </div>
+      <div className="flex-1 ml-64 p-4 overflow-y-auto">
+        {renderComponent()}
+      </div>
     </div>
   );
 };

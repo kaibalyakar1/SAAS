@@ -4,16 +4,22 @@ const PaymentHistoryTable = ({
   handlePayNow,
 }) => {
   const getPaymentStatusLabel = (status) => {
-    if (status.toLowerCase() === "paid") {
+    if (status.toLowerCase() === "success") {
       return (
         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
           Paid
         </span>
       );
-    } else {
+    } else if (status.toLowerCase() === "cancelled") {
       return (
         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-          Unpaid
+          Failed
+        </span>
+      );
+    } else if (status.toLowerCase() === "pending") {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+          Pending
         </span>
       );
     }
@@ -57,13 +63,14 @@ const PaymentHistoryTable = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getPaymentStatusLabel(payment.status)}
                 </td>
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   {payment.paymentDate
                     ? new Date(payment.paymentDate).toLocaleDateString()
                     : "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {payment.status === "paid" ? (
+                  {payment.status === "success" ? (
                     <button
                       className="text-sm bg-green-100 hover:bg-green-200 text-green-800 px-3 py-1 rounded-full transition duration-300"
                       onClick={() => generateBill(payment)}

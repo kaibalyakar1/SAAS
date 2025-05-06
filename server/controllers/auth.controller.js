@@ -95,6 +95,20 @@ export const login = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+export const logout = async (req, res) => {
+  try {
+    const token = req.headers["authorization"]?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    await User.findOneAndUpdate({ token }, { $set: { token: null } });
+
+    return res.status(200).json({ success: true, message: "Logged out" });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
 export const sendOTP = async (req, res) => {
   try {
     const { phoneNumber } = req.body;

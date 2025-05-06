@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema(
 
       default: "OWNER",
     },
+    status: {
+      type: String,
+      enum: ["paid", "unpaid"],
+      default: "unpaid",
+    },
     password: {
       type: String,
       required: true,

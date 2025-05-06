@@ -1,6 +1,7 @@
 import { createRazorpayOrder } from "../services/payments.service.js";
 import Payment from "../models/payment.model.js";
 import crypto from "crypto";
+import userModel from "../models/user.model.js";
 
 const FLAT_PRICING = {
   "1FLOOR": 5,
@@ -12,14 +13,21 @@ const FLAT_PRICING = {
 export const createPayment = async (req, res) => {
   const { month, year } = req.body;
   const user = req.user;
-
+  console.log("blabsdlhih", user);
+  console.log("user", user.houseNumber);
   try {
+    const currentMonth = new Date().toLocaleString("default", {
+      month: "long",
+    });
+    console.log("Current month:", currentMonth);
+
     const existingPayment = await Payment.findOne({
       houseNumber: user.houseNumber,
-      month: new Date().toLocaleString("default", { month: "long" }),
-      year: year || new Date().getFullYear().toString(),
-      status: "paid",
+      month: currentMonth,
+      status: "success", // Directly check for "paid" status
     });
+
+    console.log("Existing payment:", existingPayment);
 
     if (existingPayment) {
       return res.status(400).json({
@@ -27,7 +35,6 @@ export const createPayment = async (req, res) => {
         message: "Payment already made for this period",
       });
     }
-
     const amount = user.amount;
     if (!amount) {
       return res.status(400).json({
@@ -71,7 +78,91 @@ export const createPayment = async (req, res) => {
     });
   }
 };
+export const failedPayment = async (req, res) => {
+  const {
+    razorpay_payment_id,
+    razorpay_order_id,
+    razorpay_signature,
+    error,
+    houseNumber,
+    month,
+  } = req.body;
 
+  try {
+    // Find the pending payment for this order
+    const payment = await Payment.findOneAndUpdate(
+      {
+        paymentId: razorpay_order_id,
+        houseNumber: houseNumber,
+        status: "pending",
+      },
+      {
+        $set: {
+          status: "failed",
+          errorReason: error,
+          razorpayPaymentId: razorpay_payment_id,
+          razorpaySignature: razorpay_signature,
+          updatedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "Pending payment not found for this order",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Payment failure recorded successfully",
+      payment,
+    });
+  } catch (err) {
+    console.error("Error in failedPayment:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error while recording payment failure",
+    });
+  }
+};
+// In your payment controller
+export const cancelledPayment = async (req, res) => {
+  const { razorpay_order_id, houseNumber, month } = req.body;
+
+  try {
+    // Find and update the payment
+    const payment = await Payment.findOneAndUpdate(
+      { paymentId: razorpay_order_id, houseNumber, month },
+      {
+        status: "cancelled",
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment record not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Payment cancellation recorded",
+      payment,
+    });
+  } catch (err) {
+    console.error("Error in cancelledPayment:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
@@ -87,13 +178,16 @@ export const verifyPayment = async (req, res) => {
       await Payment.findOneAndUpdate(
         { paymentId: razorpay_order_id },
         {
-          status: "paid",
+          status: "success",
           paymentDate: new Date(),
           razorpayPaymentId: razorpay_payment_id,
           razorpaySignature: razorpay_signature,
         }
       );
-
+      await userModel.findOneAndUpdate(
+        { houseNumber: req.user.houseNumber },
+        { status: "paid" }
+      );
       return res.status(200).json({
         success: true,
         message: "Payment verified successfully",
@@ -134,7 +228,7 @@ export const handleRazorpayWebhook = async (req, res) => {
       await Payment.findOneAndUpdate(
         { paymentId: payment.order_id },
         {
-          status: "paid",
+          status: "success",
           paymentDate: new Date(),
           razorpayPaymentId: payment.id,
         },
@@ -186,8 +280,36 @@ export const getMyPayments = async (req, res) => {
 };
 export const getAllPayments = async (req, res) => {
   try {
+    // Find all payments sorted by creation date
     const payments = await Payment.find().sort({ createdAt: -1 });
-    res.status(200).json({ success: true, payments });
+
+    // Get all unique houseNumbers from payments
+    const houseNumbers = [...new Set(payments.map((p) => p.houseNumber))];
+
+    // Find all users with these houseNumbers in a single query
+    const users = await userModel.find({
+      houseNumber: { $in: houseNumbers },
+    });
+
+    const userMap = users.reduce((map, user) => {
+      map[user.houseNumber] = {
+        name: user.ownerName,
+        email: user.email,
+        phone: user.phoneNumber,
+      };
+      return map;
+    }, {});
+
+    // Add user details to each payment
+    const paymentsWithUserDetails = payments.map((payment) => ({
+      ...payment._doc,
+      user: userMap[payment.houseNumber] || null,
+    }));
+
+    res.status(200).json({
+      success: true,
+      payments: paymentsWithUserDetails,
+    });
   } catch (err) {
     res.status(500).json({
       success: false,

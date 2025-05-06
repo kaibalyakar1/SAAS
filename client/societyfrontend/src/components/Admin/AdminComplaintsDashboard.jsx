@@ -305,13 +305,6 @@ const ComplaintsComponent = () => {
         <h1 className="text-xl md:text-2xl font-bold mb-2 md:mb-0">
           Complaint Management
         </h1>
-        <button
-          onClick={() => setShowComplaintForm(!showComplaintForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
-        >
-          <Plus size={16} className="mr-1" />
-          {showComplaintForm ? "Cancel" : "New Complaint"}
-        </button>
       </div>
 
       {/* Summary Cards */}
@@ -364,87 +357,6 @@ const ComplaintsComponent = () => {
           </div>
         </div>
       </div>
-
-      {/* Add Complaint Form */}
-      {showComplaintForm && (
-        <div className="bg-white p-4 shadow rounded-lg mb-6">
-          <h2 className="text-lg font-semibold mb-4">Register New Complaint</h2>
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                name="category"
-                value={newComplaint.category}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                required
-              >
-                <option value="General">General</option>
-                <option value="Plumbing">Plumbing</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Security">Security</option>
-                <option value="Cleaning">Cleaning</option>
-                <option value="Maintenance">Maintenance</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Proof (Image)
-              </label>
-              <input
-                type="file"
-                name="proof"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Complaint Description
-              </label>
-              <textarea
-                name="description"
-                required
-                value={newComplaint.description}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                placeholder="Please describe your complaint in detail..."
-              ></textarea>
-            </div>
-            <div className="md:col-span-2 flex justify-end space-x-2 mt-2">
-              <button
-                type="button"
-                onClick={() => setShowComplaintForm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Complaint"
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Search & Filter */}
       <div className="bg-white p-4 shadow rounded-lg mb-6">

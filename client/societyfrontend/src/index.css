@@ -8,7 +8,9 @@
 *::after {
   box-sizing: border-box;
 }
-
+:root {
+  --sidebar-width: 16rem;
+}
 html,
 body {
   margin: 0;
