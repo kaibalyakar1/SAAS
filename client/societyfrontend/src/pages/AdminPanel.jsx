@@ -6,6 +6,7 @@ import Properties from "../components/Admin/AdminProperties";
 import AdminDashboard from "../components/Admin/AdminHomeDashboard";
 import UnderConstruction from "./UnderConstruction";
 import AdminPayments from "../components/Admin/AdminPayments";
+import AdminIncome from "../components/Admin/AdminIncome";
 
 const MainComponent = () => {
   const [activeComponent, setActiveComponent] = useState("dashboard");
@@ -18,10 +19,13 @@ const MainComponent = () => {
         return <Properties />;
       case "expenses":
         return <ExpensesComponent />;
+      case "income":
+        return <AdminIncome />;
       case "complaints":
         return <ComplaintsComponent />;
       case "payments":
         return <AdminPayments />;
+
       default:
         return <div>Dashboard Content</div>;
     }

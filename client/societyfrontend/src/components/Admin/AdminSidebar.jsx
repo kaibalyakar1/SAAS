@@ -48,6 +48,7 @@ const AdminSidebar = ({ activeComponent, setActiveComponent }) => {
     { id: "dashboard", name: "Dashboard", icon: <BarChart2 size={20} /> },
     { id: "properties", name: "Properties", icon: <Home size={20} /> },
     { id: "expenses", name: "Expenses", icon: <TrendingUp size={20} /> },
+    { id: "income", name: "Income", icon: <DollarSign size={20} /> },
     { id: "payments", name: "Payments", icon: <DollarSign size={20} /> },
     { id: "complaints", name: "Complaints", icon: <AlertTriangle size={20} /> },
   ];
