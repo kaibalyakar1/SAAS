@@ -39,9 +39,7 @@ const AdminPayments = () => {
       try {
         setLoading(true);
         // Replace with your actual API endpoint
-        const response = await fetch(
-          `http://localhost:3000/api/v1/payment/admin/all`
-        );
+        const response = await fetch(`${url}/api/v1/payment/admin/all`);
         const data = await response.json();
 
         if (data.success) {
