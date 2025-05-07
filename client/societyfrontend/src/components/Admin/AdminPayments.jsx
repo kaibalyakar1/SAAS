@@ -23,7 +23,7 @@ const AdminPayments = () => {
     direction: "desc",
   });
   const [showFilters, setShowFilters] = useState(false);
-
+  const url = import.meta.env.VITE_API_URL;
   // Monthly summary stats
   const [summary, setSummary] = useState({
     totalAmount: 0,
