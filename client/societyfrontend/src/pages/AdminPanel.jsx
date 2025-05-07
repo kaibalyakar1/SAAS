@@ -25,24 +25,19 @@ const MainComponent = () => {
         return <ComplaintsComponent />;
       case "payments":
         return <AdminPayments />;
-
       default:
         return <div>Dashboard Content</div>;
     }
   };
 
+  // Using the AdminSidebar as a layout wrapper
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      <div className="fixed h-full">
-        <AdminSidebar
-          activeComponent={activeComponent}
-          setActiveComponent={setActiveComponent}
-        />
-      </div>
-      <div className="flex-1 ml-64 p-4 overflow-y-auto">
-        {renderComponent()}
-      </div>
-    </div>
+    <AdminSidebar
+      activeComponent={activeComponent}
+      setActiveComponent={setActiveComponent}
+    >
+      {renderComponent()}
+    </AdminSidebar>
   );
 };
 

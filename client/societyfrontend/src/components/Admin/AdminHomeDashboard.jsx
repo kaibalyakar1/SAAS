@@ -125,12 +125,6 @@ const AdminDashboard = () => {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="md:hidden bg-indigo-800 text-white p-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold">Society Admin</h1>
-        <button onClick={toggleSidebar} className="p-1">
-          <Menu size={24} />
-        </button>
-      </div>
 
       {/* Sidebar Component */}
 
