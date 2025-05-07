@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 
 const Sidebar = ({ user, closeSidebar }) => {
   const navigate = useNavigate();
-  console.log("Sidebar user:", user); // Debugging line
+  console.log("Sidebar user:", user);
   const { ownerName } = user;
   const url = import.meta.env.VITE_API_URL;
   const handleLogout = async () => {

@@ -90,3 +90,32 @@ export const updateExpense = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const createIncome = async (req, res) => {
+  try {
+    const { category, amount, date, description } = req.body;
+    const newIncome = new Expense({
+      category,
+      amount,
+      date,
+      description,
+    });
+    await newIncome.save();
+    res
+      .status(201)
+      .json({ message: "Income created successfully", income: newIncome });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getAllIncomes = async (req, res) => {
+  try {
+    const incomes = await Expense.find().sort({ date: -1 });
+    res.status(200).json(incomes);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
