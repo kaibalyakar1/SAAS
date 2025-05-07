@@ -76,19 +76,13 @@ const Navbar = () => {
           >
             Contact
           </Link>
-          <Link
-            to="/login"
-            className="text-white bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 transition"
-            onClick={toggleMenu}
-          >
-            Login
-          </Link>
+
           <Link
             to="/signup"
             className="text-blue-500 border border-blue-500 px-4 py-2 rounded hover:bg-blue-50 transition"
             onClick={toggleMenu}
           >
-            Signup
+            User
           </Link>
         </div>
       )}
