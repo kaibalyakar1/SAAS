@@ -12,30 +12,11 @@ const Footer = () => {
           <div className="mb-4 md:mb-0">
             <h3 className="text-lg font-bold">Nayan Vihar Society</h3>
             <address className="text-indigo-200 text-sm not-italic mt-1">
-              123 Society Road, City, State - 123456
+              Duhuria,Kendrapara,754211,Odisha,India
             </address>
           </div>
 
           {/* Quick Links */}
-          <div className="mb-4 md:mb-0">
-            <div className="flex flex-wrap gap-4 text-sm">
-              <a href="/dashboard" className="text-indigo-200 hover:text-white">
-                Dashboard
-              </a>
-              <a href="/payments" className="text-indigo-200 hover:text-white">
-                Payments
-              </a>
-              <a
-                href="/complaints"
-                className="text-indigo-200 hover:text-white"
-              >
-                Complaints
-              </a>
-              <a href="/notices" className="text-indigo-200 hover:text-white">
-                Notices
-              </a>
-            </div>
-          </div>
 
           {/* Contact */}
           <div className="flex items-center space-x-4">
