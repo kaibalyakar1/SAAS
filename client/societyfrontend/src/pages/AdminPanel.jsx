@@ -36,7 +36,7 @@ const MainComponent = () => {
       activeComponent={activeComponent}
       setActiveComponent={setActiveComponent}
     >
-      <div className="flex-1 md lg:ml-16 overflow-y-auto">
+      <div className="flex-1 ml-0 md:ml-24 p-4 overflow-y-auto">
         {renderComponent()}
       </div>
     </AdminSidebar>
